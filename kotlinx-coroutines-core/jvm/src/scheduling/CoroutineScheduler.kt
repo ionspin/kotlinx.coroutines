@@ -40,6 +40,9 @@ import kotlin.random.*
  * that arises from placing tasks to the end of the queue.
  * Placing former head to the tail is necessary to provide semi-FIFO order, otherwise, queue degenerates to stack.
  * When a coroutine is dispatched from an external thread, it's put into the global queue.
+ * The original idea with a single-slot LIFO buffer comes from Golang runtime scheduler by D. Vyukov.
+ * It was proven to be "fair enough", performant and generally well accepted and initially was a significant inspiration
+ * source for the coroutine scheduler.
  *
  * ### Work stealing and affinity
  *
@@ -490,7 +493,7 @@ internal class CoroutineScheduler(
          */
         if (worker.state === WorkerState.TERMINATED) return task
         // Do not add CPU tasks in local queue if we are not able to execute it
-        if (task.mode == TaskMode.NON_BLOCKING && worker.isBlocking) {
+        if (task.mode === TaskMode.NON_BLOCKING && worker.state === WorkerState.BLOCKING) {
             return task
         }
         worker.mayHaveLocalTasks = true
@@ -596,7 +599,6 @@ internal class CoroutineScheduler(
          */
         @JvmField
         var state = WorkerState.DORMANT
-        val isBlocking: Boolean get() = state == WorkerState.BLOCKING
 
         /**
          * Small state machine for termination.
@@ -654,15 +656,13 @@ internal class CoroutineScheduler(
          * Tries to acquire CPU token if worker doesn't have one
          * @return whether worker acquired (or already had) CPU token
          */
-        private fun tryAcquireCpuPermit(): Boolean {
-            return when {
-                state == WorkerState.CPU_ACQUIRED -> true
-                this@CoroutineScheduler.tryAcquireCpuPermit() -> {
-                    state = WorkerState.CPU_ACQUIRED
-                    true
-                }
-                else -> false
+        private fun tryAcquireCpuPermit(): Boolean = when {
+            state == WorkerState.CPU_ACQUIRED -> true
+            this@CoroutineScheduler.tryAcquireCpuPermit() -> {
+                state = WorkerState.CPU_ACQUIRED
+                true
             }
+            else -> false
         }
 
         /**
@@ -731,22 +731,21 @@ internal class CoroutineScheduler(
         private fun tryPark() {
             if (!inStack()) {
                 parkingState.value = PARKING_ALLOWED
-            }
-            if (parkedWorkersStackPush(this)) {
+                parkedWorkersStackPush(this)
                 return
-            } else {
-                assert { localQueue.size == 0 }
-                // Failed to get a parking permit => we are not in the stack
-                while (inStack()) {
-                    if (isTerminated || state == WorkerState.TERMINATED) break
-                    if (parkingState.value != PARKED && !parkingState.compareAndSet(PARKING_ALLOWED, PARKED)) {
-                        return
-                    }
-                    tryReleaseCpu(WorkerState.PARKING)
-                    interrupted() // Cleanup interruptions
-                    if (inStack()) {
-                        park()
-                    }
+
+            }
+            assert { localQueue.size == 0 }
+            // Failed to get a parking permit => we are not in the stack
+            while (inStack()) {
+                if (isTerminated || state == WorkerState.TERMINATED) break
+                if (parkingState.value != PARKED && !parkingState.compareAndSet(PARKING_ALLOWED, PARKED)) {
+                    return
+                }
+                tryReleaseCpu(WorkerState.PARKING)
+                interrupted() // Cleanup interruptions
+                if (inStack()) {
+                    park()
                 }
             }
         }
