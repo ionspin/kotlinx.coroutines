@@ -15,45 +15,12 @@ class BlockingCoroutineDispatcherMixedStealingStressTest : SchedulerTestBase() {
 
     private val iterations = 10_000
 
-    @Before
-    fun setUp() {
-        idleWorkerKeepAliveNs = Long.MAX_VALUE
-    }
-
-    @Test
-    fun testBlockingProgressPreventedInternal()  {
-        val blocking = blockingDispatcher(corePoolSize).asExecutor()
-        val regular = dispatcher.asExecutor()
-        repeat(iterations * stressTestMultiplier) {
-            val cpuBlocker = CyclicBarrier(corePoolSize + 1)
-            val blockingBlocker = CyclicBarrier(2)
-            regular.execute(Runnable {
-                // Block all CPU cores except current one
-                repeat(corePoolSize - 1) {
-                    regular.execute(Runnable {
-                        cpuBlocker.await()
-                    })
-                }
-
-                blocking.execute(Runnable {
-                    blockingBlocker.await()
-                })
-
-                regular.execute(Runnable {
-                    blockingBlocker.await()
-                    cpuBlocker.await()
-                })
-            })
-            cpuBlocker.await()
-        }
-    }
-
     @Test
     fun testBlockingProgressPreventedExternal()  {
         val blocking = blockingDispatcher(corePoolSize).asExecutor()
         val regular = dispatcher.asExecutor()
         repeat(iterations / 2 * stressTestMultiplier) {
-            val cpuBlocker = CyclicBarrier(corePoolSize + 1)
+            val cpuBlocker = CyclicBarrier(corePoolSize + 2)
             val blockingBlocker = CyclicBarrier(2)
             repeat(corePoolSize) {
                 regular.execute(Runnable {
