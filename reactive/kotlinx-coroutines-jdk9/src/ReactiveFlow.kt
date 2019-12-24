@@ -95,6 +95,13 @@ private class PublisherAsFlow<T : Any>(
         collect(SendingCollector(scope.channel))
 }
 
+/**
+ * Subscribes to this [Publisher] and performs the specified action for each received element.
+ * Cancels subscription if any exception happens during collect.
+ */
+public suspend inline fun <T> Publisher<T>.collect(action: (T) -> Unit) =
+        openSubscription().consumeEach(action)
+
 @Suppress("SubscriberImplementation")
 private class ReactiveSubscriber<T : Any>(
     capacity: Int,
