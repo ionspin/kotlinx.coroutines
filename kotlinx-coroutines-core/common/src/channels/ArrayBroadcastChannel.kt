@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2016-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package kotlinx.coroutines.channels
@@ -218,13 +218,15 @@ internal class ArrayBroadcastChannel<E>(
         override val isBufferAlwaysFull: Boolean get() = error("Should not be used")
         override val isBufferFull: Boolean get() = error("Should not be used")
 
-        override fun onCancelIdempotent(wasClosed: Boolean) {
+        override fun close(cause: Throwable?): Boolean {
+            val wasClosed = super.close(cause)
             if (wasClosed) {
                 broadcastChannel.updateHead(removeSub = this)
                 subLock.withLock {
                     subHead = broadcastChannel.tail
                 }
             }
+            return wasClosed
         }
 
         // returns true if subHead was updated and broadcast channel's head must be checked

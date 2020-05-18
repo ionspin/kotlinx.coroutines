@@ -1,10 +1,10 @@
 /*
- * Copyright 2016-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2016-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
  */
 
 @file:JvmMultifileClass
 @file:JvmName("FlowKt")
-@file:Suppress("unused", "DeprecatedCallableAddReplaceWith", "UNUSED_PARAMETER")
+@file:Suppress("unused", "DeprecatedCallableAddReplaceWith", "UNUSED_PARAMETER", "NO_EXPLICIT_RETURN_TYPE_IN_API_MODE")
 
 package kotlinx.coroutines.flow
 
@@ -22,7 +22,7 @@ import kotlin.jvm.*
  * Deprecated functions also are moved here when they renamed. The difference is that they have
  * a body with their implementation while pure stubs have [noImpl].
  */
-private fun noImpl(): Nothing =
+internal fun noImpl(): Nothing =
     throw UnsupportedOperationException("Not implemented, should not be called")
 
 /**

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2016-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
  */
 @file:Suppress("DEPRECATION_ERROR")
 
@@ -13,6 +13,7 @@ import kotlin.coroutines.*
 import kotlin.coroutines.intrinsics.*
 import kotlin.js.*
 import kotlin.jvm.*
+import kotlin.native.concurrent.*
 
 /**
  * A concrete implementation of [Job]. It is optionally a child to a parent job.
@@ -651,7 +652,7 @@ public open class JobSupport constructor(active: Boolean) : Job, ChildJob, Paren
      * Makes this [Job] cancelled with a specified [cause].
      * It is used in [AbstractCoroutine]-derived classes when there is an internal failure.
      */
-    public fun cancelCoroutine(cause: Throwable?) = cancelImpl(cause)
+    public fun cancelCoroutine(cause: Throwable?): Boolean = cancelImpl(cause)
 
     // cause is Throwable or ParentJob when cancelChild was invoked
     // returns true is exception was handled, false otherwise

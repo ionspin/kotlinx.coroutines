@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2016-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package kotlinx.coroutines
@@ -9,6 +9,7 @@ import kotlinx.coroutines.internal.*
 import kotlin.coroutines.*
 import kotlin.coroutines.intrinsics.*
 import kotlin.jvm.*
+import kotlin.native.concurrent.*
 
 private const val UNDECIDED = 0
 private const val SUSPENDED = 1
@@ -31,8 +32,8 @@ internal open class CancellableContinuationImpl<in T>(
     /*
      * Implementation notes
      *
-     * AbstractContinuation is a subset of Job with following limitations:
-     * 1) It can have only cancellation listeners
+     * CancellableContinuationImpl is a subset of Job with following limitations:
+     * 1) It can have only cancellation listener (no "on cancelling")
      * 2) It always invokes cancellation listener if it's cancelled (no 'invokeImmediately')
      * 3) It can have at most one cancellation listener
      * 4) Its cancellation listeners cannot be deregistered
@@ -81,15 +82,16 @@ internal open class CancellableContinuationImpl<in T>(
     public override val isCancelled: Boolean get() = state is CancelledContinuation
 
     public override fun initCancellability() {
-        // This method does nothing. Leftover for binary compatibility with old compiled code
+        setupCancellation()
     }
 
-    private fun isReusable(): Boolean = delegate is DispatchedContinuation<*> && delegate.isReusable
+    private fun isReusable(): Boolean = delegate is DispatchedContinuation<*> && delegate.isReusable(this)
 
     /**
      * Resets cancellability state in order to [suspendAtomicCancellableCoroutineReusable] to work.
      * Invariant: used only by [suspendAtomicCancellableCoroutineReusable] in [REUSABLE_CLAIMED] state.
      */
+    @JvmName("resetState") // Prettier stack traces
     internal fun resetState(): Boolean {
         assert { parentHandle !== NonDisposableHandle }
         val state = _state.value
@@ -105,7 +107,8 @@ internal open class CancellableContinuationImpl<in T>(
 
     /**
      * Setups parent cancellation and checks for postponed cancellation in the case of reusable continuations.
-     * It is only invoked from an internal [getResult] function.
+     * It is only invoked from an internal [getResult] function for reusable continuations
+     * and from [suspendCancellableCoroutine] to establish a cancellation before registering CC anywhere.
      */
     private fun setupCancellation() {
         if (checkCompleted()) return
@@ -451,4 +454,3 @@ private class CompletedWithCancellation(
 ) {
     override fun toString(): String = "CompletedWithCancellation[$result]"
 }
-

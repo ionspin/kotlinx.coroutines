@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2016-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
  */
 @file:Suppress("DEPRECATION_ERROR")
 
@@ -113,7 +113,7 @@ public abstract class AbstractCoroutine<in T>(
         afterResume(state)
     }
 
-    protected open fun afterResume(state: Any?) = afterCompletion(state)
+    protected open fun afterResume(state: Any?): Unit = afterCompletion(state)
 
     internal final override fun handleOnCompletionException(exception: Throwable) {
         handleCoroutineException(context, exception)

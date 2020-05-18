@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2016-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
  */
 
 @file:Suppress("INVISIBLE_REFERENCE", "INVISIBLE_MEMBER")
@@ -93,7 +93,7 @@ public class PublisherCoroutine<in T>(
     override val isClosedForSend: Boolean get() = isCompleted
     override val isFull: Boolean = mutex.isLocked
     override fun close(cause: Throwable?): Boolean = cancelCoroutine(cause)
-    override fun invokeOnClose(handler: (Throwable?) -> Unit) =
+    override fun invokeOnClose(handler: (Throwable?) -> Unit): Nothing =
         throw UnsupportedOperationException("PublisherCoroutine doesn't support invokeOnClose")
 
     override fun offer(element: T): Boolean {

@@ -1,8 +1,8 @@
 /*
- * Copyright 2016-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2016-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
  */
 
-@file:Suppress("UNCHECKED_CAST")
+@file:Suppress("UNCHECKED_CAST", "NO_EXPLICIT_VISIBILITY_IN_API_MODE")
 
 package kotlinx.coroutines.internal
 
@@ -52,7 +52,8 @@ private fun <E : Throwable> E.sanitizeStackTrace(): E {
     return this
 }
 
-internal actual fun <E : Throwable> recoverStackTrace(exception: E, continuation: Continuation<*>): E {
+@Suppress("NOTHING_TO_INLINE") // Inline for better R8 optimization
+internal actual inline fun <E : Throwable> recoverStackTrace(exception: E, continuation: Continuation<*>): E {
     if (!RECOVER_STACK_TRACES || continuation !is CoroutineStackFrame) return exception
     return recoverFromStackFrame(exception, continuation)
 }
@@ -155,8 +156,11 @@ internal actual suspend inline fun recoverAndThrow(exception: Throwable): Nothin
     }
 }
 
-internal actual fun <E : Throwable> unwrap(exception: E): E {
-    if (!RECOVER_STACK_TRACES) return exception
+@Suppress("NOTHING_TO_INLINE") // Inline for better R8 optimizations
+internal actual inline fun <E : Throwable> unwrap(exception: E): E =
+    if (!RECOVER_STACK_TRACES) exception else unwrapImpl(exception)
+
+internal fun <E : Throwable> unwrapImpl(exception: E): E {
     val cause = exception.cause
     // Fast-path to avoid array cloning
     if (cause == null || cause.javaClass != exception.javaClass) {
@@ -187,7 +191,7 @@ private fun createStackTrace(continuation: CoroutineStackFrame): ArrayDeque<Stac
  * @suppress
  */
 @InternalCoroutinesApi
-public fun artificialFrame(message: String) = java.lang.StackTraceElement("\b\b\b($message", "\b", "\b", -1)
+public fun artificialFrame(message: String): StackTraceElement = java.lang.StackTraceElement("\b\b\b($message", "\b", "\b", -1)
 internal fun StackTraceElement.isArtificial() = className.startsWith("\b\b\b")
 private fun Array<StackTraceElement>.frameIndex(methodName: String) = indexOfFirst { methodName == it.className }
 

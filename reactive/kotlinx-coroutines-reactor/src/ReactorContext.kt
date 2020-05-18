@@ -1,3 +1,7 @@
+/*
+ * Copyright 2016-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
+ */
+
 package kotlinx.coroutines.reactor
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -45,7 +49,7 @@ import kotlinx.coroutines.reactive.*
  */
 @ExperimentalCoroutinesApi
 public class ReactorContext(public val context: Context) : AbstractCoroutineContextElement(ReactorContext) {
-    companion object Key : CoroutineContext.Key<ReactorContext>
+    public companion object Key : CoroutineContext.Key<ReactorContext>
 }
 
 /**

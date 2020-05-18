@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2016-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package kotlinx.coroutines.intrinsics
@@ -13,7 +13,7 @@ import kotlin.coroutines.intrinsics.*
  * while waiting to be dispatched.
  */
 @InternalCoroutinesApi
-public fun <T> (suspend () -> T).startCoroutineCancellable(completion: Continuation<T>) = runSafely(completion) {
+public fun <T> (suspend () -> T).startCoroutineCancellable(completion: Continuation<T>): Unit = runSafely(completion) {
     createCoroutineUnintercepted(completion).intercepted().resumeCancellableWith(Result.success(Unit))
 }
 

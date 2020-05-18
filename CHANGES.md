@@ -1,5 +1,59 @@
 # Change log for kotlinx.coroutines
 
+## Version 1.3.6
+
+### Flow
+
+* `StateFlow`, new primitive for state handling (#1973, #1816, #395). The `StateFlow` is designed to eventually replace `ConflatedBroadcastChannel` for state publication scenarios. Please, try it and share your feedback. Note, that Flow-based primitives to publish events will be added later. For events you should continue to either use `BroadcastChannel(1)`, if you put events into the `StateFlow`, protect them from double-processing with flags.
+* `Flow.onEmpty` operator is introduced (#1890).
+* Behavioural change in `Flow.onCompletion`, it is aligned with `invokeOnCompletion` now and passes `CancellationException` to its cause parameter (#1693).
+* A lot of Flow operators have left its experimental status and are promoted to stable API.
+
+### Other
+
+* `runInterruptible` primitive to tie cancellation with thread interruption for blocking calls. Contributed by @jxdabc (#1947).
+* Integration module with RxJava3 is introduced. Contributed by @ZacSweers (#1883)
+* Integration with [BlockHound](https://github.com/reactor/BlockHound) in `kotlinx-coroutines-debug` module (#1821, #1060).
+* Memory leak in ArrayBroadcastChannel is fixed (#1885).
+* Behavioural change in `suspendCancellableCoroutine`, cancellation is established before invoking passed block argument (#1671).
+* Debug agent internals are moved into `kotlinx-coroutines-core` for better integration with IDEA. It should not affect library users and all the redundant code should be properly eliminated with R8.
+* ClassCastException with reusable continuations bug is fixed (#1966).
+* More precise scheduler detection for `Executor.asCoroutineDispatcher` (#1992).
+* Kotlin updated to 1.3.71.
+
+## Version 1.3.5
+
+* `firstOrNull` operator. Contributed by @bradynpoulsen.
+* `java.time` adapters for Flow operators. Contributed by @fvasco.
+* `kotlin.time.Duration` support (#1402). Contributed by @fvasco. 
+* Memory leak with a mix of reusable and non-reusable continuations is fixed (#1855).
+* `DebugProbes` are ready for production installation: its performance is increased, the flag to disable creation stacktraces to reduce the footprint is introduced (#1379, #1372).
+* Stacktrace recovery workaround for Android 6.0 and earlier bug (#1866).
+* New integration module: `kotlinx-coroutines-jdk9` with adapters for `java.util.concurrent.Flow`.
+* `BroadcastChannel.close` properly starts lazy coroutine (#1713).
+* `kotlinx-coroutines-bom` is published without Gradle metadata.
+* Make calls to service loader in reactor integrations optimizable by R8 (#1817).
+
+## Version 1.3.4
+
+### Flow
+
+* Detect missing `awaitClose` calls in `callbackFlow` to make it less error-prone when used with callbacks (#1762, #1770). This change makes `callbackFlow` **different** from `channelFlow`.
+* `ReceiveChannel.asFlow` extension is introduced (#1490).
+* Enforce exception transparency invariant in `flow` builder (#1657).
+* Proper `Dispatcher` support in `Flow` reactive integrations (#1765).
+* Batch `Subscription.request` calls in `Flow` reactive integration (#766).
+* `ObservableValue.asFlow` added to JavaFx integration module (#1695).
+* `ObservableSource.asFlow` added to RxJava2 integration module (#1768).
+
+### Other changes
+
+* `kotlinx-coroutines-core` is optimized for R8, making it much smaller for Android usages (75 KB for `1.3.4` release).
+* Performance of `Dispatchers.Default` is improved (#1704, #1706).
+* Kotlin is updated to 1.3.70.
+* `CoroutineDispatcher` and `ExecutorCoroutineDispatcher` experimental coroutine context keys are introduced (#1805).
+* Performance of various `Channel` operations is improved (#1565).
+
 ## Version 1.3.3
 
 ### Flow

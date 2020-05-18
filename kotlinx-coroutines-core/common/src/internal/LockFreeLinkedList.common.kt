@@ -1,10 +1,12 @@
 /*
- * Copyright 2016-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2016-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
  */
+@file:Suppress("NO_EXPLICIT_VISIBILITY_IN_API_MODE")
 
 package kotlinx.coroutines.internal
 
 import kotlin.jvm.*
+import kotlin.native.concurrent.*
 
 /** @suppress **This is unstable API and it is subject to change.** */
 public expect open class LockFreeLinkedListNode() {

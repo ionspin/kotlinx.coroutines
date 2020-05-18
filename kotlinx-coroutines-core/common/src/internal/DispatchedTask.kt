@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2016-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package kotlinx.coroutines
@@ -117,7 +117,7 @@ internal fun <T> DispatchedTask<T>.resume(delegate: Continuation<T>, useMode: In
     // slow-path - use delegate
     val state = takeState()
     val exception = getExceptionalResult(state)?.let { recoverStackTrace(it, delegate) }
-    val result = if (exception != null) Result.failure(exception) else Result.success(state as T)
+    val result = if (exception != null) Result.failure(exception) else Result.success(getSuccessfulResult<T>(state))
     when (useMode) {
         MODE_ATOMIC_DEFAULT -> delegate.resumeWith(result)
         MODE_CANCELLABLE -> delegate.resumeCancellableWith(result)

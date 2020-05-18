@@ -50,7 +50,7 @@ public suspend inline fun <reified T : Throwable> assertFailsWith(flow: Flow<*>)
         flow.collect()
         fail("Should be unreached")
     } catch (e: Throwable) {
-        assertTrue(e is T)
+        assertTrue(e is T, "Expected exception ${T::class}, but had $e instead")
     }
 }
 
@@ -80,3 +80,8 @@ public fun wrapperDispatcher(context: CoroutineContext): CoroutineContext {
 
 public suspend fun wrapperDispatcher(): CoroutineContext = wrapperDispatcher(coroutineContext)
 
+class BadClass {
+    override fun equals(other: Any?): Boolean = error("equals")
+    override fun hashCode(): Int = error("hashCode")
+    override fun toString(): String = error("toString")
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2016-2020 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package kotlinx.coroutines.selects
@@ -13,6 +13,8 @@ import kotlinx.coroutines.sync.*
 import kotlin.coroutines.*
 import kotlin.coroutines.intrinsics.*
 import kotlin.jvm.*
+import kotlin.native.concurrent.*
+import kotlin.time.*
 
 /**
  * Scope for [select] invocation.
@@ -34,10 +36,10 @@ public interface SelectBuilder<in R> {
     public operator fun <P, Q> SelectClause2<P, Q>.invoke(param: P, block: suspend (Q) -> R)
 
     /**
-     * Registers clause in this [select] expression with additional parameter nullable parameter of type [P]
+     * Registers clause in this [select] expression with additional nullable parameter of type [P]
      * with the `null` value for this parameter that selects value of type [Q].
      */
-    public operator fun <P, Q> SelectClause2<P?, Q>.invoke(block: suspend (Q) -> R) = invoke(null, block)
+    public operator fun <P, Q> SelectClause2<P?, Q>.invoke(block: suspend (Q) -> R): Unit = invoke(null, block)
 
     /**
      * Clause that selects the given [block] after a specified timeout passes.
@@ -50,6 +52,17 @@ public interface SelectBuilder<in R> {
     @ExperimentalCoroutinesApi
     public fun onTimeout(timeMillis: Long, block: suspend () -> R)
 }
+
+/**
+ * Clause that selects the given [block] after the specified [timeout] passes.
+ * If timeout is negative or zero, [block] is selected immediately.
+ *
+ * **Note: This is an experimental api.** It may be replaced with light-weight timer/timeout channels in the future.
+ */
+@ExperimentalCoroutinesApi
+@ExperimentalTime
+public fun <R> SelectBuilder<R>.onTimeout(timeout: Duration, block: suspend () -> R): Unit =
+        onTimeout(timeout.toDelayMillis(), block)
 
 /**
  * Clause for [select] expression without additional parameters that does not select any value.
@@ -199,6 +212,8 @@ public suspend inline fun <R> select(crossinline builder: SelectBuilder<R>.() ->
 
 
 @SharedImmutable
+internal val NOT_SELECTED: Any = Symbol("NOT_SELECTED")
+@SharedImmutable
 internal val ALREADY_SELECTED: Any = Symbol("ALREADY_SELECTED")
 @SharedImmutable
 private val UNDECIDED: Any = Symbol("UNDECIDED")
@@ -213,6 +228,7 @@ internal class SeqNumber {
     fun next() = number.incrementAndGet()
 }
 
+@SharedImmutable
 private val selectOpSequenceNumber = SeqNumber()
 
 @PublishedApi
@@ -226,8 +242,8 @@ internal class SelectBuilderImpl<in R>(
 
     override fun getStackTraceElement(): StackTraceElement? = null
 
-    // selection state is "this" (list of nodes) initially and is replaced by idempotent marker (or null) when selected
-    private val _state = atomic<Any?>(this)
+    // selection state is NOT_SELECTED initially and is replaced by idempotent marker (or null) when selected
+    private val _state = atomic<Any?>(NOT_SELECTED)
 
     // this is basically our own SafeContinuation
     private val _result = atomic<Any?>(UNDECIDED)
@@ -262,7 +278,10 @@ internal class SelectBuilderImpl<in R>(
         assert { isSelected } // "Must be selected first"
         _result.loop { result ->
             when {
-                result === UNDECIDED -> if (_result.compareAndSet(UNDECIDED, value())) return
+                result === UNDECIDED -> {
+                    val update = value()
+                    if (_result.compareAndSet(UNDECIDED, update)) return
+                }
                 result === COROUTINE_SUSPENDED -> if (_result.compareAndSet(COROUTINE_SUSPENDED, RESUMED)) {
                     block()
                     return
@@ -343,7 +362,7 @@ internal class SelectBuilderImpl<in R>(
 
     override val isSelected: Boolean get() = _state.loop { state ->
         when {
-            state === this -> return false
+            state === NOT_SELECTED -> return false
             state is OpDescriptor -> state.perform(this) // help
             else -> return true // already selected
         }
@@ -466,14 +485,14 @@ internal class SelectBuilderImpl<in R>(
         _state.loop { state -> // lock-free loop on state
             when {
                 // Found initial state (not selected yet) -- try to make it selected
-                state === this -> {
+                state === NOT_SELECTED -> {
                     if (otherOp == null) {
                         // regular trySelect -- just mark as select
-                        if (!_state.compareAndSet(this, null)) return@loop
+                        if (!_state.compareAndSet(NOT_SELECTED, null)) return@loop
                     } else {
                         // Rendezvous with another select instance -- install PairSelectOp
                         val pairSelectOp = PairSelectOp(otherOp)
-                        if (!_state.compareAndSet(this, pairSelectOp)) return@loop
+                        if (!_state.compareAndSet(NOT_SELECTED, pairSelectOp)) return@loop
                         val decision = pairSelectOp.perform(this)
                         if (decision !== null) return decision
                     }
@@ -529,7 +548,7 @@ internal class SelectBuilderImpl<in R>(
             // we must finish preparation of another operation before attempting to reach decision to select
             otherOp.finishPrepare()
             val decision = otherOp.atomicOp.decide(null) // try decide for success of operation
-            val update: Any = if (decision == null) otherOp.desc else impl
+            val update: Any = if (decision == null) otherOp.desc else NOT_SELECTED
             impl._state.compareAndSet(this, update)
             return decision
         }
@@ -541,10 +560,7 @@ internal class SelectBuilderImpl<in R>(
     override fun performAtomicTrySelect(desc: AtomicDesc): Any? =
         AtomicSelectOp(this, desc).perform(null)
 
-    override fun toString(): String {
-        val state = _state.value
-        return "SelectInstance(state=${if (state === this) "this" else state.toString()}, result=${_result.value})"
-    }
+    override fun toString(): String = "SelectInstance(state=${_state.value}, result=${_result.value})"
 
     private class AtomicSelectOp(
         @JvmField val impl: SelectBuilderImpl<*>,
@@ -583,8 +599,8 @@ internal class SelectBuilderImpl<in R>(
                 when {
                     state === this -> return null // already in progress
                     state is OpDescriptor -> state.perform(impl) // help
-                    state === impl -> {
-                        if (impl._state.compareAndSet(impl, this))
+                    state === NOT_SELECTED -> {
+                        if (impl._state.compareAndSet(NOT_SELECTED, this))
                             return null // success
                     }
                     else -> return ALREADY_SELECTED
@@ -594,12 +610,12 @@ internal class SelectBuilderImpl<in R>(
 
         // reverts the change done by prepareSelectedOp
         private fun undoPrepare() {
-            impl._state.compareAndSet(this, impl)
+            impl._state.compareAndSet(this, NOT_SELECTED)
         }
 
         private fun completeSelect(failure: Any?) {
             val selectSuccess = failure == null
-            val update = if (selectSuccess) null else impl
+            val update = if (selectSuccess) null else NOT_SELECTED
             if (impl._state.compareAndSet(this, update)) {
                 if (selectSuccess)
                     impl.doAfterSelect()

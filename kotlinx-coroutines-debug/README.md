@@ -13,12 +13,17 @@ suspension stacktraces.
 Additionally, it is possible to process the list of such coroutines via [DebugProbes.dumpCoroutinesInfo] or dump isolated parts
 of coroutines hierarchy referenced by a [Job] or [CoroutineScope] instances using  [DebugProbes.printJob] and [DebugProbes.printScope] respectively.
 
+This module also provides an automatic [BlockHound](https://github.com/reactor/BlockHound) integration
+that detects when a blocking operation was called in a coroutine context that prohibits it. In order to use it,
+please follow the BlockHound [quick start guide](
+https://github.com/reactor/BlockHound/blob/1.0.2.RELEASE/docs/quick_start.md).
+
 ### Using in your project
 
 Add `kotlinx-coroutines-debug` to your project test dependencies:
 ```
 dependencies {
-    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-debug:1.3.3'
+    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-debug:1.3.6'
 }
 ```
 
@@ -55,9 +60,20 @@ stacktraces will be dumped to the console.
 
 ### Using as JVM agent
 
-It is possible to use this module as a standalone JVM agent to enable debug probes on the application startup.
-You can run your application with an additional argument: `-javaagent:kotlinx-coroutines-debug-1.3.3.jar`.
+Debug module can also be used as a standalone JVM agent to enable debug probes on the application startup.
+You can run your application with an additional argument: `-javaagent:kotlinx-coroutines-debug-1.3.6.jar`.
 Additionally, on Linux and Mac OS X you can use `kill -5 $pid` command in order to force your application to print all alive coroutines.
+When used as Java agent, `"kotlinx.coroutines.debug.enable.creation.stack.trace"` system property can be used to control 
+[DebugProbes.enableCreationStackTraces] along with agent startup.
+
+### Using in production environment
+
+It is possible to run an application in production environments with debug probes in order to monitor its 
+state and improve its observability. 
+For that, it is strongly recommended to switch off [DebugProbes.enableCreationStackTraces] property to significantly 
+reduce the overhead of debug probes and make it insignificant.
+With creation stack-traces disabled, the typical overhead of enabled debug probes is a single-digit percentage of the total
+application throughput.
 
 
 ### Example of usage
@@ -128,8 +144,13 @@ Dumping only deferred
 
 ### Status of the API
 
-API is purely experimental and it is not guaranteed that it won't be changed (while it is marked as `@ExperimentalCoroutinesApi`).
-Do not use this module in production environment and do not rely on the format of the data produced by [DebugProbes]. 
+API is experimental, and it is not guaranteed it won't be changed (while it is marked as `@ExperimentalCoroutinesApi`).
+Like the rest of experimental API, `DebugProbes` is carefully designed, tested and ready to use in both test and production 
+environments. It is marked as experimental to leave us the room to enrich the output data in a potentially backwards incompatible manner
+to further improve diagnostics and debugging experience.
+
+The output format of [DebugProbes] can be changed in the future and it is not recommended to rely on the string representation
+of the dump programmatically.
 
 ### Debug agent and Android
 
@@ -161,6 +182,7 @@ java.lang.NoClassDefFoundError: Failed resolution of: Ljava/lang/management/Mana
 [DebugProbes.dumpCoroutinesInfo]: https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-debug/kotlinx.coroutines.debug/-debug-probes/dump-coroutines-info.html
 [DebugProbes.printJob]: https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-debug/kotlinx.coroutines.debug/-debug-probes/print-job.html
 [DebugProbes.printScope]: https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-debug/kotlinx.coroutines.debug/-debug-probes/print-scope.html
+[DebugProbes.enableCreationStackTraces]: https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-debug/kotlinx.coroutines.debug/-debug-probes/enable-creation-stack-traces.html
 <!--- INDEX kotlinx.coroutines.debug.junit4 -->
 [CoroutinesTimeout]: https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-debug/kotlinx.coroutines.debug.junit4/-coroutines-timeout/index.html
 <!--- END -->
