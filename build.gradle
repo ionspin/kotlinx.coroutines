@@ -70,12 +70,13 @@ buildscript {
         maven { url "https://kotlin.bintray.com/kotlin-eap" }
         maven { url "https://jetbrains.bintray.com/kotlin-native-dependencies" }
         maven { url "https://plugins.gradle.org/m2/" }
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
     }
 
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "org.jetbrains.dokka:dokka-gradle-plugin:$dokka_version"
-        classpath "org.jetbrains.kotlinx:atomicfu-gradle-plugin:$atomicfu_version"
+        classpath "com.ionspin.kotlin.atomicfu:atomicfu-gradle-plugin:0.14.3-SNAPSHOT"
         classpath "org.jetbrains.kotlinx:kotlinx-knit:$knit_version"
         classpath "com.moowork.gradle:gradle-node-plugin:$gradle_node_version"
         classpath "org.openjfx:javafx-plugin:$javafx_plugin_version"
@@ -160,6 +161,7 @@ allprojects {
         }
         maven { url "https://kotlin.bintray.com/kotlin-eap" }
         maven { url "https://kotlin.bintray.com/kotlinx" }
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
     }
 }
 
