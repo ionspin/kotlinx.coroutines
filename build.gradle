@@ -58,6 +58,7 @@ buildscript {
     }
 
     repositories {
+        maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
         jcenter()
         maven { url "https://kotlin.bintray.com/kotlinx" }
         maven {
@@ -75,7 +76,7 @@ buildscript {
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "org.jetbrains.dokka:dokka-gradle-plugin:$dokka_version"
-        classpath "org.jetbrains.kotlinx:atomicfu-gradle-plugin:$atomicfu_version"
+        classpath "com.ionspin.kotlin.atomicfu:atomicfu-gradle-plugin:$atomicfu_version"
         classpath "org.jetbrains.kotlinx:kotlinx-knit:$knit_version"
         classpath "com.moowork.gradle:gradle-node-plugin:$gradle_node_version"
         classpath "org.openjfx:javafx-plugin:$javafx_plugin_version"
@@ -93,6 +94,13 @@ import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
 // todo:KLUDGE: This is needed to workaround dependency resolution between Java and MPP modules
 def configureKotlinJvmPlatform(configuration) {
     configuration.attributes.attribute(KotlinPlatformType.attribute, KotlinPlatformType.jvm)
+}
+
+
+tasks.whenTaskAdded {task ->
+    if(task.name.contains("dokka")) {
+        task.enabled = false
+    }
 }
 
 allprojects {

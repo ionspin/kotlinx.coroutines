@@ -29,14 +29,13 @@ dependencies {
     dokkaStubs project(":stdlib-stubs")
 }
 
-
 dokka {
     kotlinTasks { [] }
     outputFormat = 'kotlin-website'
     dependsOn(project.configurations.dokkaStubs)
 
     noStdlibLink = true
-    
+
     externalDocumentationLink {
         packageListUrl = rootProject.projectDir.toPath().resolve("site/stdlib.package.list").toUri().toURL()
         url = new URL("https://kotlinlang.org/api/latest/jvm/stdlib/")
