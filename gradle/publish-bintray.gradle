@@ -47,6 +47,14 @@ publishing {
                 password = project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_API_KEY')
             }
         }
+        maven {
+            url =  "https://oss.sonatype.org/content/repositories/snapshots/"
+            name = "snapshot"
+            credentials {
+                username = project.hasProperty('sonatypeUsername') ? project.property('sonatypeUsername') : System.getenv('SONATYPE_USERNAME')
+                password = project.hasProperty('sonatypePassword') ? project.property('sonatypePassword') : System.getenv('SONATYPE_PASSWORD')
+            }
+        }
     }
 
     if (!isMultiplatform && !isBom) {
