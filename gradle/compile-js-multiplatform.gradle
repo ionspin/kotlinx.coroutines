@@ -12,7 +12,7 @@ kotlin {
             if (js.hasProperty("irTarget")) {
                 irTarget.nodejs()
                 irTarget?.compilations['main']?.dependencies {
-                    api "org.jetbrains.kotlinx:atomicfu-js:$atomicfu_version"
+                    api "com.ionspin.kotlin.atomicfu:atomicfu-js:$atomicfu_version"
                 }
             }
         }

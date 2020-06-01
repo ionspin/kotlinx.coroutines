@@ -63,11 +63,11 @@ task mavenTest(type: Test) {
 mavenTest.enabled = false
 
 task debugAgentTest(type: Test) {
-    def sourceSet = sourceSets.debugAgentTest
-    dependsOn(project(':kotlinx-coroutines-debug').shadowJar)
-    jvmArgs ('-javaagent:' + project(':kotlinx-coroutines-debug').shadowJar.outputs.files.getFiles()[0])
-    testClassesDirs = sourceSet.output.classesDirs
-    classpath = sourceSet.runtimeClasspath
+//    def sourceSet = sourceSets.debugAgentTest
+//    dependsOn(project(':kotlinx-coroutines-debug').shadowJar)
+//    jvmArgs ('-javaagent:' + project(':kotlinx-coroutines-debug').shadowJar.outputs.files.getFiles()[0])
+//    testClassesDirs = sourceSet.output.classesDirs
+//    classpath = sourceSet.runtimeClasspath
 }
 
 dependencies {

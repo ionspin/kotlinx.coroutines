@@ -11,9 +11,10 @@ kotlin {
         project.ext.nativeMainSets.add(target.compilations['main'].kotlinSourceSets.first())
         project.ext.nativeTestSets.add(target.compilations['test'].kotlinSourceSets.first())
     }
-
     targets {
         addTarget(presets.linuxX64)
+        addTarget(presets.linuxArm64)
+        addTarget(presets.linuxArm32Hfp)
         addTarget(presets.iosArm64)
         addTarget(presets.iosArm32)
         addTarget(presets.iosX64)
@@ -24,7 +25,10 @@ kotlin {
         addTarget(presets.watchosArm32)
         addTarget(presets.watchosArm64)
         addTarget(presets.watchosX86)
+
+
     }
+
 
     sourceSets {
         nativeMain { dependsOn commonMain }
