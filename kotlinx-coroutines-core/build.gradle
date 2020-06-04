@@ -62,6 +62,17 @@ defineSourceSet("nativeOther", ["native"]) { isNativeOther(it) }
  * because JMV-only projects depend on core, thus core should always be initialized before configuration.
  */
 kotlin {
+    sourceSets {
+        commonMain {
+            dependencies {
+                // todo: we should not need it
+                // todo: it must be compileOnly or JVM is spoiled !!!
+                // seems we still need this to make tests pass
+                implementation "com.ionspin.kotlin.atomicfu:atomicfu:$atomicfu_version"
+            }
+        }
+    }
+
     configure(sourceSets) {
         def srcDir = name.endsWith('Main') ? 'src' : 'test'
         def platform = name[0..-5]
