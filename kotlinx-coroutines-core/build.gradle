@@ -99,9 +99,9 @@ kotlin {
                     freeCompilerArgs += ["-e", "kotlinx.coroutines.mainBackground"]
                 }
             }
-            testRuns {
-                background { setExecutionSourceFrom(binaries.backgroundDebugTest) }
-            }
+//            testRuns {
+//                background { setExecutionSourceFrom(binaries.backgroundDebugTest) }
+//            }
         }
     }
 }
